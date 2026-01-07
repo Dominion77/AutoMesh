@@ -1,0 +1,222 @@
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+
+/**
+ * @title CarbonSealToken
+ * @dev ERC721 token representing verified carbon credits
+ */
+contract CarbonSealToken is ERC721, ERC721URIStorage, ERC721Enumerable, AccessControl {
+    using Counters for Counters.Counter;
+    
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    
+    Counters.Counter private _tokenIdCounter;
+    
+    struct CarbonCredit {
+        uint256 tokenId;
+        uint256 farmId;
+        address farmer;
+        uint256 carbonAmount; 
+        string methodology;
+        uint256 vintage; 
+        uint256 mintedAt;
+        bool isRetired;
+        uint256 retiredAt;
+        string retirementReason;
+    }
+    
+    mapping(uint256 => CarbonCredit) public credits;
+    mapping(uint256 => uint256[]) public farmCredits;
+    mapping(address => uint256[]) public ownerCredits;
+    
+    address public registryContract;
+    
+    event CreditMinted(
+        uint256 indexed tokenId,
+        address indexed farmer,
+        uint256 indexed farmId,
+        uint256 carbonAmount,
+        string methodology
+    );
+    
+    event CreditRetired(
+        uint256 indexed tokenId,
+        address indexed retiredBy,
+        string reason
+    );
+    
+    event CreditTransferred(
+        uint256 indexed tokenId,
+        address indexed from,
+        address indexed to
+    );
+    
+    modifier onlyRegistry() {
+        require(msg.sender == registryContract, "CarbonSealToken: Only registry");
+        _;
+    }
+    
+    constructor(address _registry) 
+        ERC721("CarbonSeal Credit", "CSC") 
+    {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, _registry);
+        registryContract = _registry;
+    }
+    
+    /**
+     * @dev Mint a new carbon credit (called by registry)
+     */
+    function mintCredit(
+        address _to,
+        uint256 _farmId,
+        uint256 _amount,
+        string memory _methodology,
+        string memory _tokenURI
+    ) external onlyRole(MINTER_ROLE) returns (uint256) {
+        require(_amount > 0, "CarbonSealToken: Amount must be positive");
+        require(bytes(_methodology).length > 0, "CarbonSealToken: Methodology required");
+        
+        _tokenIdCounter.increment();
+        uint256 tokenId = _tokenIdCounter.current();
+        
+     
+        _safeMint(_to, tokenId);
+        _setTokenURI(tokenId, _tokenURI);
+        
+       
+        CarbonCredit memory credit = CarbonCredit({
+            tokenId: tokenId,
+            farmId: _farmId,
+            farmer: _to,
+            carbonAmount: _amount,
+            methodology: _methodology,
+            vintage: block.timestamp,
+            mintedAt: block.timestamp,
+            isRetired: false,
+            retiredAt: 0,
+            retirementReason: ""
+        });
+        
+        credits[tokenId] = credit;
+        farmCredits[_farmId].push(tokenId);
+        ownerCredits[_to].push(tokenId);
+        
+        emit CreditMinted(tokenId, _to, _farmId, _amount, _methodology);
+        return tokenId;
+    }
+    
+    /**
+     * @dev Retire a carbon credit (burn with purpose)
+     */
+    function retireCredit(
+        uint256 _tokenId, 
+        string memory _reason
+    ) external {
+        require(ownerOf(_tokenId) == msg.sender, "CarbonSealToken: Not owner");
+        require(!credits[_tokenId].isRetired, "CarbonSealToken: Already retired");
+        
+        credits[_tokenId].isRetired = true;
+        credits[_tokenId].retiredAt = block.timestamp;
+        credits[_tokenId].retirementReason = _reason;
+        
+        
+        
+        emit CreditRetired(_tokenId, msg.sender, _reason);
+    }
+    
+    /**
+     * @dev Get credit details
+     */
+    function getCreditDetails(uint256 _tokenId) 
+        external 
+        view 
+        returns (CarbonCredit memory) 
+    {
+        return credits[_tokenId];
+    }
+    
+    /**
+     * @dev Get credits by farm
+     */
+    function getFarmCredits(uint256 _farmId) 
+        external 
+        view 
+        returns (uint256[] memory) 
+    {
+        return farmCredits[_farmId];
+    }
+    
+    /**
+     * @dev Get credits by owner
+     */
+    function getOwnerCredits(address _owner) 
+        external 
+        view 
+        returns (uint256[] memory) 
+    {
+        return ownerCredits[_owner];
+    }
+    
+    /**
+     * @dev Override transfer to track ownership changes
+     */
+    function _update(
+        address to,
+        uint256 tokenId,
+        address auth
+    ) internal override(ERC721, ERC721Enumerable) returns (address) {
+        address previousOwner = super._update(to, tokenId, auth);
+        
+        if (previousOwner != address(0) && previousOwner != to) {
+            uint256[] storage oldList = ownerCredits[previousOwner];
+            for (uint256 i = 0; i < oldList.length; i++) {
+                if (oldList[i] == tokenId) {
+                    oldList[i] = oldList[oldList.length - 1];
+                    oldList.pop();
+                    break;
+                }
+            }
+            
+            ownerCredits[to].push(tokenId);
+            
+            emit CreditTransferred(tokenId, previousOwner, to);
+        }
+        
+        return previousOwner;
+    }
+    
+    /**
+     * @dev Override required by multiple inheritance
+     */
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721, ERC721URIStorage)
+        returns (string memory)
+    {
+        return super.tokenURI(tokenId);
+    }
+    
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721URIStorage, ERC721Enumerable, AccessControl)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+    
+    function _increaseBalance(address account, uint128 value)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
+        super._increaseBalance(account, value);
+    }
+}
