@@ -6,10 +6,23 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
+
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network peaqTestnet",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network peaq",
+    "verify:testnet": "hardhat verify --network peaqTestnet",
+    "verify:mainnet": "hardhat verify --network peaq",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost"
+  },
+
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.4",
     "@nomicfoundation/hardhat-network-helpers": "^3.0.3",
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
     "@nomicfoundation/hardhat-verify": "^3.0.8",

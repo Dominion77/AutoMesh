@@ -1,7 +1,10 @@
 import { expect } from "chai";
-import  ethers  from "hardhat";
+import  hre  from "hardhat";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import type { CarbonSealRegistry, CarbonSealToken, CarbonSealOracle } from "../typechain-types";
+
+const ethers = (hre as any).ethers;
+
 
 describe("CarbonSeal", function () {
   async function deployContractsFixture() {

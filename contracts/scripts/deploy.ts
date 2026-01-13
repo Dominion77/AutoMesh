@@ -1,14 +1,14 @@
-import { ethers, network, run } from "hardhat";
+import hre from "hardhat";
 import fs from "fs";
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
+  const [deployer] = await (hre as any).ethers.getSigners();
   console.log("Deploying contracts with account:", deployer.address);
   console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
 
  
   console.log("\nDeploying CarbonSealRegistry...");
-  const CarbonSealRegistry = await ethers.getContractFactory("CarbonSealRegistry");
+  const CarbonSealRegistry = await (hre as any).ethers.getContractFactory("CarbonSealRegistry");
   const registry = await CarbonSealRegistry.deploy();
   await registry.waitForDeployment();
   const registryAddress = await registry.getAddress();
@@ -16,7 +16,7 @@ async function main() {
 
  
   console.log("\nDeploying CarbonSealToken...");
-  const CarbonSealToken = await ethers.getContractFactory("CarbonSealToken");
+  const CarbonSealToken = await (hre as any).ethers.getContractFactory("CarbonSealToken");
   const token = await CarbonSealToken.deploy(registryAddress);
   await token.waitForDeployment();
   const tokenAddress = await token.getAddress();
@@ -29,8 +29,8 @@ async function main() {
 
   
   console.log("\nDeploying CarbonSealOracle...");
-  const CarbonSealOracle = await ethers.getContractFactory("CarbonSealOracle");
-  const oracle = await CarbonSealOracle.deploy(ethers.ZeroAddress);
+  const CarbonSealOracle = await (hre as any).ethers.getContractFactory("CarbonSealOracle");
+  const oracle = await CarbonSealOracle.deploy((hre as any).ethers.ZeroAddress);
   await oracle.waitForDeployment();
   const oracleAddress = await oracle.getAddress();
   console.log("CarbonSealOracle deployed to:", oracleAddress);
@@ -42,7 +42,8 @@ async function main() {
   console.log("Roles granted");
 
   const deploymentInfo = {
-    network: network.name,
+    network: (hre as any).network.config?.chainId || (hre as any).network.name,
+    networkName: (hre as any).network.name,
     timestamp: new Date().toISOString(),
     contracts: {
       registry: registryAddress,
@@ -60,29 +61,29 @@ async function main() {
     fs.mkdirSync("deployments");
   }
   fs.writeFileSync(
-    `deployments/${network.name}.json`,
+    `deployments/${(hre as any).network.name}.json`,
     JSON.stringify(deploymentInfo, null, 2)
   );
 
-  if (network.name !== "hardhat") {
+  if ((hre as any).network.name !== "hardhat" && (hre as any).network.name !== "localhost") {
     console.log("\nWaiting for block confirmations...");
     await registry.deploymentTransaction()?.wait(5);
     
     console.log("\nVerifying contracts...");
     try {
-      await run("verify:verify", {
+      await (hre as any).run("verify:verify", {
         address: registryAddress,
         constructorArguments: [],
       });
       
-      await run("verify:verify", {
+      await (hre as any).run("verify:verify", {
         address: tokenAddress,
         constructorArguments: [registryAddress],
       });
       
-      await run("verify:verify", {
+      await (hre as any).run("verify:verify", {
         address: oracleAddress,
-        constructorArguments: [ethers.ZeroAddress],
+        constructorArguments: [(hre as any).ethers.ZeroAddress],
       });
       
       console.log("Contracts verified successfully!");
