@@ -24,7 +24,7 @@ const config: HardhatUserConfig = {
     peaqTestnet: {
       url: process.env.PEAQ_TESTNET_RPC || "https://evm-rpc-testnet.peaq.network",
       accounts: process.env.TEST_PRIVATE_KEY ? [process.env.TEST_PRIVATE_KEY] : [],
-      chainId: 3339,
+      chainId: 9999,
     }as any,
     hardhat: {
       chainId: 31337,

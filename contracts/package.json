@@ -6,7 +6,6 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
-
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
@@ -17,7 +16,6 @@
     "node": "hardhat node",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost"
   },
-
   "peerDependencies": {
     "typescript": "^5"
   },
