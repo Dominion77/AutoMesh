@@ -1,9 +1,9 @@
-import hre from "hardhat";
-import fs from "fs";
+import * as hre from "hardhat";
+import * as fs from 'fs';
 
 async function main() {
   const [deployer] = await (hre as any).ethers.getSigners();
-  console.log("Deploying contracts with account:", deployer.address);
+  console.log("Deploying contracts with account:", deployer.getAddress());
   console.log("Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
 
  
