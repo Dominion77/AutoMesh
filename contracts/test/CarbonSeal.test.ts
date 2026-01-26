@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import  hre  from "hardhat";
+import * as  hre  from "hardhat";
 import type { CarbonSealRegistry, CarbonSealToken, CarbonSealOracle } from "../typechain-types";
 
 const ethers = (hre as any).ethers;
@@ -9,25 +9,20 @@ describe("CarbonSeal", function () {
   async function deployContractsFixture() {
     const [owner, farmer1, farmer2, verifier, oracle] = await ethers.getSigners();
 
-    // Deploy CarbonSealRegistry
     const CarbonSealRegistry = await ethers.getContractFactory("CarbonSealRegistry");
     const registry = await CarbonSealRegistry.deploy();
     await registry.waitForDeployment();
 
-    // Deploy CarbonSealToken
     const CarbonSealToken = await ethers.getContractFactory("CarbonSealToken");
     const token = await CarbonSealToken.deploy(await registry.getAddress());
     await token.waitForDeployment();
 
-    // Link contracts
     await registry.setTokenContract(await token.getAddress());
 
-    // Deploy Oracle
     const CarbonSealOracle = await ethers.getContractFactory("CarbonSealOracle");
     const oracleContract = await CarbonSealOracle.deploy(ethers.ZeroAddress);
     await oracleContract.waitForDeployment();
 
-    // Setup roles
     await registry.grantRole(await registry.ORACLE_ROLE(), await oracleContract.getAddress());
     await registry.grantRole(await registry.VERIFIER_ROLE(), verifier.address);
 
