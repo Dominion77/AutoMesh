@@ -8,9 +8,9 @@ import { GradientText } from './components/ui/gradient-text';
 import { CarbonMeter } from './components/dashboard/carbon-meter';
 import { FarmCard } from './components/dashboard/farm-card';
 import { MintPanel } from './components/dashboard/mint-panel';
-import { CarbonChart } from '@/components/visualizations/carbon-chart';
+import { CarbonChart } from './components/visualisation/carbon-chart';
 import { Leaf, Droplets, Zap, Sparkles } from 'lucide-react';
-import { useCarbonData } from '@/hooks/use-carbon-data';
+import { useCarbonData } from './hooks/use-carbon-data';
 
 export default function HomePage() {
   const { isConnected, address } = useAccount();
@@ -118,7 +118,7 @@ export default function HomePage() {
                     <Droplets className="w-6 h-6 text-white" />
                   </div>
                 </div>
-                <CarbonChart data={carbonData} />
+                <CarbonChart data={carbonData.history} />
               </GlassCard>
             </motion.div>
           </div>

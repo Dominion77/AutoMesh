@@ -18,7 +18,7 @@ interface FarmData {
 }
 
 interface FarmCardProps {
-  farmData?: FarmData;
+  farmData?: FarmData | null;
 }
 
 export function FarmCard({ farmData }: FarmCardProps) {

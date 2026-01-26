@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount} from 'wagmi';
 import { CarbonSealTokenABI } from '../../lib/abis';
 import { AnimatedButton } from '../../components/ui/animated-button';
 import { GlassCard } from '../../components/ui/glass-card';
@@ -24,6 +24,7 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = 
     useWaitForTransactionReceipt({ hash });
+  const {address} = useAccount();
 
   const handleMint = async () => {
     if (!canMint || !farmId) return;
@@ -35,7 +36,8 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
       abi: CarbonSealTokenABI,
       functionName: 'mintCredit',
       args: [
-        farmId,
+        address as `0x${string}`,
+        BigInt(farmId),
         BigInt(mintAmount),
         methodology,
         tokenURI,
