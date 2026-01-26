@@ -3,3 +3,4 @@
 /* eslint-disable */
 export * as carbonSealRegistrySol from "./CarbonSealRegistry.sol";
 export { CarbonSealOracle__factory } from "./CarbonSealOracle__factory";
+export { CarbonSealToken__factory } from "./CarbonSealToken__factory";

@@ -4,3 +4,4 @@
 import type * as carbonSealRegistrySol from "./CarbonSealRegistry.sol";
 export type { carbonSealRegistrySol };
 export type { CarbonSealOracle } from "./CarbonSealOracle";
+export type { CarbonSealToken } from "./CarbonSealToken";

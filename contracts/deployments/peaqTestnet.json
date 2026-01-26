@@ -1,0 +1,11 @@
+{
+  "network": 9990,
+  "networkName": "peaqTestnet",
+  "timestamp": "2026-01-26T10:40:41.619Z",
+  "contracts": {
+    "registry": "0xea0beD04C5283F4B12b7a86C0a5c5525Ab858b62",
+    "token": "0x342014080329Ba2B00900B3EC71f383A8769acEF",
+    "oracle": "0x2AA56b8F3B6081540526aB9F92F071Cf18f8b27e"
+  },
+  "deployer": "0x16A044Dbf1e3204677e7fE517F896dc25f24566d"
+}
