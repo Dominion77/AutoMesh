@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount} from 'wagmi';
+import { motion } from 'framer-motion';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { CarbonSealTokenABI } from '../../lib/abis';
 import { AnimatedButton } from '../../components/ui/animated-button';
 import { GlassCard } from '../../components/ui/glass-card';
@@ -18,25 +18,25 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mintAmount, setMintAmount] = useState(1000);
   const [methodology, setMethodology] = useState('IPCC Tier 1');
+  const { address } = useAccount();
   
-  const canMint = availableCarbon >= 1000 && farmId;
+  const canMint = availableCarbon >= 1000 && farmId && address;
 
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = 
     useWaitForTransactionReceipt({ hash });
-  const {address} = useAccount();
 
   const handleMint = async () => {
-    if (!canMint || !farmId) return;
+    if (!canMint || !farmId || !address) return;
 
-    const tokenURI = `ipfs://QmGeneratedHash/${Date.now()}`;
+    const tokenURI = `CarbonSeal:${farmId}:${mintAmount}:${methodology}:${Date.now()}`;
 
     writeContract({
       address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`,
       abi: CarbonSealTokenABI,
       functionName: 'mintCredit',
       args: [
-        address as `0x${string}`,
+        address,
         BigInt(farmId),
         BigInt(mintAmount),
         methodology,
@@ -45,11 +45,13 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
     });
   };
 
+  const isLoading = isPending || isConfirming;
+
   return (
     <>
       <GlassCard className="p-6">
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-lilac-500 to-blue-500 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-lilac-500 to-blue-500 flex items-center justify-center">
             <Zap className="w-7 h-7 text-white" />
           </div>
           <div>
@@ -68,7 +70,7 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-linear-to-r from-lilac-500/10 to-blue-500/10">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-lilac-500/10 to-blue-500/10">
             <div>
               <div className="font-medium">Minimum Required</div>
               <div className="text-2xl font-bold">1,000 kg</div>
@@ -87,24 +89,33 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
             size="lg"
             className="w-full"
             onClick={() => setIsModalOpen(true)}
-            disabled={!canMint || isPending || isConfirming}
-            loading={isPending || isConfirming}
+            disabled={!canMint || isLoading}
+            loading={isLoading}
           >
             {isPending ? 'Minting...' : isConfirming ? 'Confirming...' : 'Mint Carbon Credits'}
             <Sparkles className="w-5 h-5" />
           </AnimatedButton>
 
-          {isConfirmed && (
+          {isConfirmed && hash && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="p-4 rounded-2xl bg-linear-to-r from-green-500/10 to-emerald-500/10"
+              className="p-4 rounded-2xl bg-gradient-to-r from-green-500/10 to-emerald-500/10"
             >
               <div className="flex items-center gap-3">
                 <CheckCircle className="w-6 h-6 text-green-500" />
                 <div>
                   <p className="font-medium">Credit Minted Successfully!</p>
-                  <p className="text-sm text-gray-600">View in your wallet</p>
+                  <p className="text-sm text-gray-600">
+                    <a 
+                      href={`https://testnet.peaqscan.io/tx/${hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-lilac-600 hover:underline"
+                    >
+                      View on peaqScan ↗
+                    </a>
+                  </p>
                 </div>
               </div>
             </motion.div>
@@ -148,6 +159,7 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
                 variant="secondary"
                 className="flex-1"
                 onClick={() => setIsModalOpen(false)}
+                disabled={isLoading}
               >
                 Cancel
               </AnimatedButton>
@@ -155,7 +167,8 @@ export function MintPanel({ availableCarbon, farmId }: MintPanelProps) {
                 variant="primary"
                 className="flex-1"
                 onClick={handleMint}
-                loading={isPending || isConfirming}
+                loading={isLoading}
+                disabled={!canMint}
               >
                 Confirm Mint
               </AnimatedButton>
